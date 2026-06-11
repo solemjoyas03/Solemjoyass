@@ -210,25 +210,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   // Real-time sync from Firestore — no local mock fallback
   useEffect(() => {
     setLoading(true);
-    const q = query(collection(db, 'products'));
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const productsData: Product[] = snapshot.docs.map(
-          (docSnap) => ({ id: docSnap.id, ...docSnap.data() } as Product)
-        );
-        setProducts(productsData);
-        setLoading(false);
-        setProductsReady(true);
-      },
-      (error) => {
-        console.error('Error al cargar productos desde Firestore:', error);
-        setProducts([]);
-        setLoading(false);
-        setProductsReady(true);
-      }
-    );
-    return () => unsubscribe();
+    try {
+      const q = query(collection(db, 'products'));
+      const unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          const productsData: Product[] = snapshot.docs.map(
+            (docSnap) => ({ id: docSnap.id, ...docSnap.data() } as Product)
+          );
+          setProducts(productsData);
+          setLoading(false);
+          setProductsReady(true);
+        },
+        (error) => {
+          console.error('Error al cargar productos desde Firestore:', error);
+          setProducts([]);
+          setLoading(false);
+          setProductsReady(true);
+        }
+      );
+      return () => unsubscribe();
+    } catch (error) {
+      console.error('Error al inicializar listener de productos:', error);
+      setLoading(false);
+      setProductsReady(true);
+    }
   }, []);
 
   useEffect(() => { localStorage.setItem('solem_cart_v2', JSON.stringify(cart)); }, [cart]);
@@ -236,24 +242,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Sync homeContent from Firestore
   useEffect(() => {
-    const homeDocRef = doc(db, 'settings', 'homeContent');
-    const unsubscribe = onSnapshot(
-      homeDocRef,
-      (docSnap) => {
-        if (docSnap.exists()) {
-          setHomeContent({ ...DEFAULT_HOME_CONTENT, ...docSnap.data() } as HomeContent);
-        } else {
+    try {
+      const homeDocRef = doc(db, 'settings', 'homeContent');
+      const unsubscribe = onSnapshot(
+        homeDocRef,
+        (docSnap) => {
+          if (docSnap.exists()) {
+            setHomeContent({ ...DEFAULT_HOME_CONTENT, ...docSnap.data() } as HomeContent);
+          } else {
+            setHomeContent(DEFAULT_HOME_CONTENT);
+          }
+          setHomeContentReady(true);
+        },
+        (error) => {
+          console.error('Error al cargar contenido del home:', error);
           setHomeContent(DEFAULT_HOME_CONTENT);
+          setHomeContentReady(true);
         }
-        setHomeContentReady(true);
-      },
-      (error) => {
-        console.error('Error al cargar contenido del home:', error);
-        setHomeContent(DEFAULT_HOME_CONTENT);
-        setHomeContentReady(true);
-      }
-    );
-    return () => unsubscribe();
+      );
+      return () => unsubscribe();
+    } catch (error) {
+      console.error('Error al inicializar listener de homeContent:', error);
+      setHomeContentReady(true);
+    }
   }, []);
 
   const clientProducts = products.filter(p => p.active && hasStock(p));

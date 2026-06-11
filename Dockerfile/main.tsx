@@ -3,27 +3,14 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Firebase config must be baked into the Vite bundle at build time.
-# Pass these as --build-arg when running docker build.
-ARG VITE_FIREBASE_API_KEY
-ARG VITE_FIREBASE_AUTH_DOMAIN
-ARG VITE_FIREBASE_PROJECT_ID
-ARG VITE_FIREBASE_STORAGE_BUCKET
-ARG VITE_FIREBASE_MESSAGING_SENDER_ID
-ARG VITE_FIREBASE_APP_ID
-
-ENV VITE_FIREBASE_API_KEY=$VITE_FIREBASE_API_KEY
-ENV VITE_FIREBASE_AUTH_DOMAIN=$VITE_FIREBASE_AUTH_DOMAIN
-ENV VITE_FIREBASE_PROJECT_ID=$VITE_FIREBASE_PROJECT_ID
-ENV VITE_FIREBASE_STORAGE_BUCKET=$VITE_FIREBASE_STORAGE_BUCKET
-ENV VITE_FIREBASE_MESSAGING_SENDER_ID=$VITE_FIREBASE_MESSAGING_SENDER_ID
-ENV VITE_FIREBASE_APP_ID=$VITE_FIREBASE_APP_ID
-
 # Install pnpm
 RUN npm install -g pnpm
 
 # Copy lockfiles first to leverage Docker layer cache
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+# Copy .env files so Vite picks up VITE_* variables at build time
+COPY .env* ./
 
 RUN pnpm install --frozen-lockfile
 

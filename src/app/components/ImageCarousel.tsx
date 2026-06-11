@@ -5,7 +5,8 @@ interface ImageCarouselProps {
   images: string[];
 }
 
-export function ImageCarousel({ images }: ImageCarouselProps) {
+export function ImageCarousel({ images: rawImages }: ImageCarouselProps) {
+  const images = rawImages.filter(img => img && img.trim() !== '');
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
